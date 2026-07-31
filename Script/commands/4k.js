@@ -1,77 +1,74 @@
-const axios = require("axios");
-
-const baseApiUrl = async () => {
-  const { data } = await axios.get(
-    "https://raw.githubusercontent.com/Mostakim0978/D1PT0/refs/heads/main/baseApiUrl.json"
-  );
-  return data.mostakim;
+module.exports.config = {
+  name: "4k",
+  version: "2.0.0",
+  hasPermssion: 0,
+  credits: "SHAHADAT SAHU" //Credit Change Korben na✅
+  description: "Enhance any image to 4K",
+  commandCategory: "image",
+  usages: "[imageUrl]",
+  cooldowns: 5
 };
 
-module.exports = {
-  config: {
-    name: "4k",
-    version: "1.0.0",
-    hasPermssion: 0,
-    credits: "SHAHADAT SAHU",
-    description: "Enhance image with Remini AI",
-    commandCategory: "image",
-    usages: "[reply image]",
-    cooldowns: 5
-  },
+module.exports.run = async function ({ api, event, args }) {
+  const axios = require("axios");
+  const FormData = require("form-data");
 
-  handleEvent: async function ({ api, event }) {
-    if (!event.body) return;
+  const repliedUrl = event.messageReply?.attachments?.[0]?.url;
+  const imageUrl = args[0] || repliedUrl;
 
-    if (event.body.toLowerCase().trim() === "4k") {
-      return processImage(api, event);
-    }
-  },
-
-  run: async function ({ api, event }) {
-    return processImage(api, event);
+  if (!imageUrl) {
+    return api.sendMessage(
+      "Please provide an image URL or reply to a photo.",
+      event.threadID,
+      event.messageID
+    );
   }
-};
 
-async function processImage(api, event) {
+  let processingMsg;
   try {
-    const imageUrl = event.messageReply?.attachments?.[0]?.url;
-
-    if (!imageUrl) {
-      return api.sendMessage(
-        "📸 Please reply to an image.",
-        event.threadID,
-        event.messageID
-      );
-    }
-
-    const waitMsg = await api.sendMessage(
-      "𝐏𝐥𝐞𝐚𝐬𝐞 𝐖𝐚𝐢𝐭...😘",
+    processingMsg = await api.sendMessage(
+      "⌛ Processing your image...",
       event.threadID
     );
 
-    const apiUrl = `${await baseApiUrl()}/remini?input=${encodeURIComponent(imageUrl)}`;
+    const form = new FormData();
+    form.append("imageUrl", imageUrl);
+    form.append("type", "4K");
 
-    const image = await axios.get(apiUrl, {
-      responseType: "stream"
+    const { data } = await axios.post("https://imageforge-ai.onrender.com/api/upscale", form, {
+      headers: form.getHeaders(),
+      timeout: 60000
     });
 
-    api.sendMessage(
+    if (!data.status) {
+      if (processingMsg?.messageID) {
+        await api.unsendMessage(processingMsg.messageID);
+      }
+      return api.sendMessage("Failed: " + data.error, event.threadID, event.messageID);
+    }
+
+    const stream = (await axios.get(data.result.after, { responseType: "stream" })).data;
+
+    if (processingMsg?.messageID) {
+      await api.unsendMessage(processingMsg.messageID);
+    }
+
+    return api.sendMessage(
       {
-        body: "✅ 𝐇𝐞𝐫𝐞 𝐢𝐬 𝐲𝐨𝐮𝐫 𝐞𝐧𝐡𝐚𝐧𝐜𝐞𝐝 𝐩𝐡𝐨𝐭𝐨!",
-        attachment: image.data
+        body: `✅ Image Enhanced\n\n🖼️ Type: ${data.type}\n⏱️ Time: ${data.processing}`,
+        attachment: stream
       },
       event.threadID,
-      () => {
-        api.unsendMessage(waitMsg.messageID);
-      },
       event.messageID
     );
-
   } catch (err) {
-    api.sendMessage(
-      `❌ Error: ${err.message}`,
+    if (processingMsg?.messageID) {
+      await api.unsendMessage(processingMsg.messageID);
+    }
+    return api.sendMessage(
+      "Enhancement failed. Please try again later.",
       event.threadID,
       event.messageID
     );
   }
-}
+};
