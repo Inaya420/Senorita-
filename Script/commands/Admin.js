@@ -100,7 +100,7 @@ module.exports.run = async function({ api, event }) {
  attachment: fs.createReadStream(__dirname + "/cache/owner.jpg")
  }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/owner.jpg"));
 
- return request(" https://i.imgur.com/gokzyKd.jpeg ") //এখানে আপনার ছবির Imgur link বসাবেন✅
+ return request("https://imgur.com/6MJJVUl") //এখানে আপনার ছবির Imgur link বসাবেন✅
  .pipe(fs.createWriteStream(__dirname + '/cache/owner.jpg'))
  .on('close', () => callback());
 };") //এখানে আপনার ছবির Imgur link বসাবেন✅
