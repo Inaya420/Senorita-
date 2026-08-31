@@ -21,8 +21,8 @@ module.exports.run = async function({ api, event, Users, Threads }) {
   const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || await Users.getNameUser(event.logMessageData.leftParticipantFbId);
 
   const type = (event.author == event.logMessageData.leftParticipantFbId)
-    ? " তোর সাহস কম না  গ্রুপের এডমিনের পারমিশন ছাড়া তুই লিভ  নিস😡😠🤬 \nFAHADS-BOT"
-    : "তোমার এই গ্রুপে থাকার কোনো যোগ্যাতা নেই ছাগল😡\nতাই তোমাকে লাথি মেরে গ্রুপ থেকে বের করে দেওয়া হলো🤪 WELLCOME REMOVE🤧\nFAHADS-BOT";
+    ? " Gc theke jokhn Leave i nibe taile join howar dotkar ki!! hatt r jeno keo ore add dio na \nFAHADS-BOT"
+    : "Tomar e ei gc te thaka lgbe na dyr hou! r jeno eshi na \nFAHADS-BOT";
 
   const path = join(__dirname, "Shahadat", "leaveGif");
   const gifPath = join(path, `leave1.gif`);
