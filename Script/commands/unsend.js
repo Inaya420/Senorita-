@@ -13,8 +13,8 @@ module.exports.config = {
 };
 
 const lang = {
-  returnCant: "কি unsent করমু? reply করে বলো সুনা 🫰",
-  missingReply: "কি unsent করমু? reply করে বলো সুনা 🫰"
+  returnCant: "ki unsent krbo?😒",
+  missingReply: "ki unsent krbo?😒 otar reply deo😒"
 };
 
 module.exports.run = async function ({ api, event }) {
