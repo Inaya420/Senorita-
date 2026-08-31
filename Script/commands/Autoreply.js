@@ -43,7 +43,7 @@ module.exports.handleEvent = async function ({ api, event }) {
     "i love you": "Sure?",
     "love you": "Dhonnobad",
     "by": "Tata",
-    " ki somossa": "Tmr ki Somossa?",
+    "ki somossa": "Tmr ki Somossa?",
     "bot er baccha": "Amr baccha tmr pete🐸.Iykyk😂",
     "tmr namm ki": " SENORITA✨ ",
     "pic de": "Kisher pic?",
