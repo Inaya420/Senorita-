@@ -2,7 +2,7 @@ module.exports.config = {
   name: "leave",
   eventType: ["log:unsubscribe"],
   version: "1.0.0",
-  credits: "SHAHADAT SAHU",
+  credits: "FAHAD",
   description: "Thông báo bot hoặc người rời khỏi nhóm",
   dependencies: {
     "fs-extra": "",
@@ -21,8 +21,8 @@ module.exports.run = async function({ api, event, Users, Threads }) {
   const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || await Users.getNameUser(event.logMessageData.leftParticipantFbId);
 
   const type = (event.author == event.logMessageData.leftParticipantFbId)
-    ? " Gc theke jokhn Leave i nibe taile join howar dotkar ki!! hatt r jeno keo ore add dio na \nFAHADS-BOT"
-    : "Tomar e ei gc te thaka lgbe na dyr hou! r jeno eshi na \nFAHADS-BOT";
+    ? "ore add dio na,eto dekhar time nei"
+    : "Leave nice😑";
 
   const path = join(__dirname, "Shahadat", "leaveGif");
   const gifPath = join(path, `leave1.gif`);
