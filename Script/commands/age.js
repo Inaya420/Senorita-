@@ -1,12 +1,12 @@
 module.exports = {
   config: {
     name: "age",
-    version: "2.0.0",
+    version: "3.0.0",
     author: "FAHAD",
     hasPermission: 0,
     commandCategory: "utility",
     cooldowns: 5,
-    description: "Calculate age, total time and zodiac sign from birth date",
+    description: "Calculate age and zodiac sign from birth date",
     usage: "[DD/MM/YYYY]",
     dependencies: {
       "moment-timezone": "",
@@ -23,7 +23,7 @@ module.exports = {
     try {
       if (!args[0]) {
         return api.sendMessage(
-          "Please provide your birth date in DD/MM/YYYY format\nExample: age 01/04/2006",
+          "আপনার জন্ম তারিখ দিন।\n\nফরম্যাট: DD/MM/YYYY\nউদাহরণ: age 01/04/2006",
           event.threadID
         );
       }
@@ -33,7 +33,7 @@ module.exports = {
 
       if (dateParts.length !== 3) {
         return api.sendMessage(
-          "Invalid date format. Please use DD/MM/YYYY",
+          "ভুল তারিখের ফরম্যাট।\nঅনুগ্রহ করে DD/MM/YYYY ফরম্যাট ব্যবহার করুন।",
           event.threadID
         );
       }
@@ -54,7 +54,7 @@ module.exports = {
         year > new Date().getFullYear()
       ) {
         return api.sendMessage(
-          "Invalid date. Please enter a valid DD/MM/YYYY date.",
+          "ভুল জন্ম তারিখ। অনুগ্রহ করে সঠিক তারিখ দিন।",
           event.threadID
         );
       }
@@ -72,14 +72,14 @@ module.exports = {
 
       if (!birthDate.isValid()) {
         return api.sendMessage(
-          "Invalid date. Please enter a real calendar date.",
+          "এই তারিখটি সঠিক নয়। অনুগ্রহ করে একটি বাস্তব তারিখ দিন।",
           event.threadID
         );
       }
 
       if (birthDate.isAfter(now)) {
         return api.sendMessage(
-          "You can't be born in the future!",
+          "ভবিষ্যতের তারিখ জন্ম তারিখ হতে পারে না।",
           event.threadID
         );
       }
@@ -98,98 +98,111 @@ module.exports = {
 
       // Zodiac / Rashi
       function getZodiac(day, month) {
+
         if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) {
           return {
-            name: "Aries",
+            name: "মেষ",
             symbol: "♈",
-            traits: "Bold, energetic, confident and adventurous"
+            traits:
+              "সাহসী, আত্মবিশ্বাসী, উদ্যমী, নেতৃত্বপ্রবণ, স্বাধীনচেতা, প্রতিযোগিতাপ্রিয়, দ্রুত সিদ্ধান্ত নিতে পছন্দ করে, নতুন কিছু করতে আগ্রহী, পরিশ্রমী এবং নিজের লক্ষ্য অর্জনে দৃঢ়প্রতিজ্ঞ।"
           };
         }
 
         if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) {
           return {
-            name: "Taurus",
+            name: "বৃষ",
             symbol: "♉",
-            traits: "Patient, reliable, practical and determined"
+            traits:
+              "শান্ত, ধৈর্যশীল, বিশ্বস্ত, বাস্তববাদী, দায়িত্বশীল, পরিশ্রমী এবং নিজের সিদ্ধান্তে দৃঢ়। আরাম ও স্থিরতা পছন্দ করে, সম্পর্কের ক্ষেত্রে বিশ্বস্ত এবং সহজে হাল ছেড়ে দেয় না।"
           };
         }
 
         if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) {
           return {
-            name: "Gemini",
+            name: "মিথুন",
             symbol: "♊",
-            traits: "Curious, communicative, clever and adaptable"
+            traits:
+              "বুদ্ধিমান, কৌতূহলী, প্রাণবন্ত, কথা বলতে পছন্দ করে, দ্রুত শেখে, নতুন মানুষের সঙ্গে সহজে মিশতে পারে, সৃজনশীল এবং পরিস্থিতির সঙ্গে নিজেকে মানিয়ে নিতে পারে।"
           };
         }
 
         if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) {
           return {
-            name: "Cancer",
+            name: "কর্কট",
             symbol: "♋",
-            traits: "Caring, emotional, loyal and protective"
+            traits:
+              "আবেগপ্রবণ, যত্নশীল, সংবেদনশীল, পরিবারপ্রিয়, বিশ্বস্ত, সহানুভূতিশীল এবং আপনজনদের প্রতি অত্যন্ত দায়িত্বশীল। কাছের মানুষদের সুখকে অনেক গুরুত্ব দেয়।"
           };
         }
 
         if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) {
           return {
-            name: "Leo",
+            name: "সিংহ",
             symbol: "♌",
-            traits: "Confident, generous, creative and charismatic"
+            traits:
+              "আত্মবিশ্বাসী, সাহসী, উদার, নেতৃত্ব দিতে পছন্দ করে, সৃজনশীল, প্রাণবন্ত এবং নিজের প্রতি বিশ্বাসী। প্রশংসা পছন্দ করে এবং প্রিয় মানুষদের জন্য অনেক কিছু করতে চায়।"
           };
         }
 
         if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) {
           return {
-            name: "Virgo",
+            name: "কন্যা",
             symbol: "♍",
-            traits: "Practical, organized, thoughtful and hardworking"
+            traits:
+              "বুদ্ধিমান, পরিশ্রমী, দায়িত্বশীল, গোছানো, বাস্তববাদী, বিশ্লেষণী ক্ষমতাসম্পন্ন এবং ছোট বিষয়েও মনোযোগী। কাজ নিখুঁতভাবে করতে চেষ্টা করে এবং অন্যদের সাহায্য করতে পছন্দ করে।"
           };
         }
 
         if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) {
           return {
-            name: "Libra",
+            name: "তুলা",
             symbol: "♎",
-            traits: "Balanced, friendly, diplomatic and fair-minded"
+            traits:
+              "শান্তিপ্রিয়, বন্ধুত্বপূর্ণ, ভদ্র, ন্যায়পরায়ণ, কূটনৈতিক, ভারসাম্যপূর্ণ এবং সৌন্দর্যপ্রিয়। ঝগড়া এড়িয়ে চলতে পছন্দ করে এবং সবার সঙ্গে ভালো সম্পর্ক বজায় রাখার চেষ্টা করে।"
           };
         }
 
         if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) {
           return {
-            name: "Scorpio",
+            name: "বৃশ্চিক",
             symbol: "♏",
-            traits: "Passionate, determined, loyal and mysterious"
+            traits:
+              "গভীর চিন্তাশীল, দৃঢ়প্রতিজ্ঞ, সাহসী, আবেগপ্রবণ, রহস্যময়, বিশ্বস্ত এবং লক্ষ্যপূরণে অত্যন্ত মনোযোগী। কাউকে বিশ্বাস করলে তার পাশে দৃঢ়ভাবে থাকে।"
           };
         }
 
         if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) {
           return {
-            name: "Sagittarius",
+            name: "ধনু",
             symbol: "♐",
-            traits: "Optimistic, adventurous, honest and freedom-loving"
+            traits:
+              "আশাবাদী, স্বাধীনচেতা, সাহসী, ভ্রমণপ্রিয়, সৎ, প্রাণবন্ত, জ্ঞান অর্জনে আগ্রহী এবং নতুন অভিজ্ঞতা পছন্দ করে। স্বাধীনভাবে নিজের জীবন পরিচালনা করতে ভালোবাসে।"
           };
         }
 
         if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) {
           return {
-            name: "Capricorn",
+            name: "মকর",
             symbol: "♑",
-            traits: "Disciplined, responsible, ambitious and patient"
+            traits:
+              "পরিশ্রমী, দায়িত্বশীল, ধৈর্যশীল, বাস্তববাদী, শৃঙ্খলাপরায়ণ, উচ্চাকাঙ্ক্ষী এবং লক্ষ্যভেদী। ধীরে ধীরে হলেও নিজের লক্ষ্য অর্জনের জন্য কঠোর পরিশ্রম করে।"
           };
         }
 
         if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) {
           return {
-            name: "Aquarius",
+            name: "কুম্ভ",
             symbol: "♒",
-            traits: "Independent, creative, intelligent and original"
+            traits:
+              "স্বাধীনচেতা, বুদ্ধিমান, সৃজনশীল, নতুন চিন্তাধারার, মানবিক, বন্ধুত্বপূর্ণ এবং নিজের মতো করে চলতে পছন্দ করে। প্রচলিত চিন্তার বাইরে নতুন কিছু ভাবতে ভালোবাসে।"
           };
         }
 
         return {
-          name: "Pisces",
+          name: "মীন",
           symbol: "♓",
-          traits: "Kind, imaginative, emotional and compassionate"
+          traits:
+            "দয়ালু, আবেগপ্রবণ, কল্পনাপ্রবণ, সহানুভূতিশীল, সৃজনশীল, কোমলমনের এবং অন্যের অনুভূতি সহজে বুঝতে পারে। আপনজনদের জন্য অনেক যত্নশীল এবং সাহায্য করতে পছন্দ করে।"
         };
       }
 
@@ -226,6 +239,7 @@ module.exports = {
         });
 
         attachment = fs.createReadStream(avatarPath);
+
       } catch (avatarError) {
         console.log("Profile picture could not be downloaded.");
       }
@@ -233,29 +247,29 @@ module.exports = {
       const message = {
         body:
 `┏━━━━━━━━━━━━━━━━━━━━❂
-┃       AGE CALCULATOR
+┃       বয়স ক্যালকুলেটর
 ┣━━━━━━━━━━━━━━━━━━━━❂
-┃ Date of Birth: ${day}/${month}/${year}
+┃ জন্ম তারিখ: ${day}/${month}/${year}
 ┃
-┃ Current Age:
-┃ ${years} Years ${months} Months ${days} Days
+┃ বর্তমান বয়স:
+┃ ${years} বছর ${months} মাস ${days} দিন
 ┣━━━━━━━━━━━━━━━━━━━━❂
-┃        TOTAL TIME
+┃       মোট সময়
 ┣━━━━━━━━━━━━━━━━━━━━❂
-┃ ${totalMonths} Months
-┃ ${totalDays} Days
-┃ ${totalHours} Hours
-┃ ${totalMinutes} Minutes
-┃ ${totalSeconds} Seconds
+┃ ${totalMonths} মাস
+┃ ${totalDays} দিন
+┃ ${totalHours} ঘণ্টা
+┃ ${totalMinutes} মিনিট
+┃ ${totalSeconds} সেকেন্ড
 ┣━━━━━━━━━━━━━━━━━━━━❂
-┃        ZODIAC SIGN
+┃          রাশি
 ┣━━━━━━━━━━━━━━━━━━━━❂
-┃ ${zodiac.symbol} ${zodiac.name}
+┃ ${zodiac.symbol} ${zodiac.name} রাশি
 ┃
-┃ Characteristics:
+┃ রাশির বৈশিষ্ট্য:
 ┃ ${zodiac.traits}
 ┣━━━━━━━━━━━━━━━━━━━━❂
-┃ Created by: FAHADS-BOT
+┃ তৈরি করেছে: FAHADS-BOT
 ┗━━━━━━━━━━━━━━━━━━━━❂`,
         ...(attachment ? { attachment } : {})
       };
@@ -270,7 +284,7 @@ module.exports = {
       console.error("Error in age command:", error);
 
       api.sendMessage(
-        "An error occurred while processing your request.",
+        "আপনার তথ্য প্রসেস করার সময় একটি সমস্যা হয়েছে।",
         event.threadID
       );
     }
