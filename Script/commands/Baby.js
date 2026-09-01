@@ -13,7 +13,7 @@ const getMainAPI = async () => {
 
 module.exports.config = {
   name: "baby",
-  version: "2.0.1",
+  version: "2.0.2",
   hasPermssion: 0,
   credits: "ULLASH",
   description: "Smart AI Baby Chatbot",
@@ -30,7 +30,6 @@ const greetings = [
   "Achha bolo, ki khobor?",
   "Ami achi, bolo.",
   "Hmm, tomar kotha shunchi.",
-  "Eto dakcho keno? Bolo ki hoyeche!",
   "Bolo, ajke ki niye golpo hobe?",
   "Hae bolo.",
   "Ki khobor tomar?",
@@ -46,7 +45,6 @@ const greetings = [
   "Are bolo na, ki hoyeche?",
   "Ami to ekhanei achi, bolo.",
   "Ki bolbe? Mon diye shunchi.",
-  "Ajke eto dakadaki keno?",
   "Hmm, interesting. Bolo!",
   "Achha bolo, golpo kori.",
   "Ki khobor? Sob thikthak to?",
@@ -71,11 +69,25 @@ const greetings = [
 module.exports.run = async function ({ api, event, args, Users }) {
   try {
     const uid = event.senderID;
-    const senderName = await Users.getNameUser(uid);
+
+    let senderName = "User";
+
+    try {
+      senderName = await Users.getNameUser(uid);
+    } catch (e) {}
+
     const rawQuery = args.join(" ").trim();
     const query = rawQuery.toLowerCase();
 
     const simsim = await getMainAPI();
+
+    if (!simsim) {
+      return api.sendMessage(
+        "API পাওয়া যাচ্ছে না। পরে আবার চেষ্টা করো.",
+        event.threadID,
+        event.messageID
+      );
+    }
 
     if (!query) {
       const reply =
@@ -84,16 +96,6 @@ module.exports.run = async function ({ api, event, args, Users }) {
       return api.sendMessage(
         reply,
         event.threadID,
-        (err, info) => {
-          if (!err) {
-            global.client.handleReply.push({
-              name: module.exports.config.name,
-              messageID: info.messageID,
-              author: event.senderID,
-              type: "simsimi"
-            });
-          }
-        },
         event.messageID
       );
     }
@@ -116,18 +118,22 @@ module.exports.run = async function ({ api, event, args, Users }) {
       const [ask, ans] = parts.map(p => p.trim());
 
       const res = await axios.get(
-        `${simsim}/delete?ask=${encodeURIComponent(ask)}&ans=${encodeURIComponent(ans)}`
+        `${simsim}/delete?ask=${encodeURIComponent(ask)}&ans=${encodeURIComponent(ans)}`,
+        { timeout: 15000 }
       );
 
       return api.sendMessage(
-        res.data.message,
+        res.data.message || "Done.",
         event.threadID,
         event.messageID
       );
     }
 
     if (command === "list") {
-      const res = await axios.get(`${simsim}/list`);
+      const res = await axios.get(
+        `${simsim}/list`,
+        { timeout: 15000 }
+      );
 
       if (res.data.code === 200) {
         return api.sendMessage(
@@ -140,7 +146,7 @@ module.exports.run = async function ({ api, event, args, Users }) {
       }
 
       return api.sendMessage(
-        `Error: ${res.data.message}`,
+        `Error: ${res.data.message || "Unknown error"}`,
         event.threadID,
         event.messageID
       );
@@ -163,11 +169,12 @@ module.exports.run = async function ({ api, event, args, Users }) {
         parts.map(p => p.trim());
 
       const res = await axios.get(
-        `${simsim}/edit?ask=${encodeURIComponent(ask)}&old=${encodeURIComponent(oldReply)}&new=${encodeURIComponent(newReply)}`
+        `${simsim}/edit?ask=${encodeURIComponent(ask)}&old=${encodeURIComponent(oldReply)}&new=${encodeURIComponent(newReply)}`,
+        { timeout: 15000 }
       );
 
       return api.sendMessage(
-        res.data.message,
+        res.data.message || "Done.",
         event.threadID,
         event.messageID
       );
@@ -190,16 +197,14 @@ module.exports.run = async function ({ api, event, args, Users }) {
 
       const groupID = event.threadID;
 
-      let groupName = event.threadName
-        ? event.threadName
-        : "";
+      let groupName = event.threadName || "";
 
       try {
         if (!groupName && groupID != uid) {
           const threadInfo =
             await api.getThreadInfo(groupID);
 
-          if (threadInfo?.threadName) {
+          if (threadInfo && threadInfo.threadName) {
             groupName = threadInfo.threadName;
           }
         }
@@ -218,31 +223,135 @@ module.exports.run = async function ({ api, event, args, Users }) {
           `&groupName=${encodeURIComponent(groupName)}`;
       }
 
-      const res = await axios.get(teachUrl);
+      const res = await axios.get(
+        teachUrl,
+        { timeout: 15000 }
+      );
 
       return api.sendMessage(
-        res.data.message,
+        res.data.message || "Teaching completed.",
         event.threadID,
         event.messageID
       );
     }
 
     const res = await axios.get(
-      `${simsim}/simsimi?text=${encodeURIComponent(query)}&senderName=${encodeURIComponent(senderName)}`
+      `${simsim}/simsimi?text=${encodeURIComponent(query)}&senderName=${encodeURIComponent(senderName)}`,
+      { timeout: 20000 }
     );
 
-    const replies = Array.isArray(res.data.response)
-      ? res.data.response
-      : [res.data.response];
+    let replies = [];
+
+    if (Array.isArray(res.data.response)) {
+      replies = res.data.response;
+    } else if (res.data.response) {
+      replies = [res.data.response];
+    } else if (res.data.message) {
+      replies = [res.data.message];
+    }
+
+    if (!replies.length) {
+      return api.sendMessage(
+        "Sorry, ekhon reply dite parchi na.",
+        event.threadID,
+        event.messageID
+      );
+    }
 
     for (const rep of replies) {
       if (!rep) continue;
 
       await new Promise(resolve => {
         api.sendMessage(
-          rep,
+          String(rep),
           event.threadID,
-          (err, info) => {
-            if (!err) {
-              global.client.handleReply.push({
-                name: module.exports.config
+          () => resolve(),
+          event.messageID
+        );
+      });
+    }
+
+  } catch (error) {
+    console.error("BABY COMMAND ERROR:", error);
+
+    return api.sendMessage(
+      "Bot er API te problem hocche. Ektu pore abar try koro.",
+      event.threadID,
+      event.messageID
+    );
+  }
+};
+
+module.exports.handleReply = async function ({
+  api,
+  event,
+  handleReply,
+  Users
+}) {
+  try {
+    if (event.senderID !== handleReply.author) {
+      return;
+    }
+
+    const uid = event.senderID;
+
+    let senderName = "User";
+
+    try {
+      senderName = await Users.getNameUser(uid);
+    } catch (e) {}
+
+    const query = event.body
+      ? event.body.trim().toLowerCase()
+      : "";
+
+    if (!query) return;
+
+    const simsim = await getMainAPI();
+
+    const res = await axios.get(
+      `${simsim}/simsimi?text=${encodeURIComponent(query)}&senderName=${encodeURIComponent(senderName)}`,
+      { timeout: 20000 }
+    );
+
+    let replies = [];
+
+    if (Array.isArray(res.data.response)) {
+      replies = res.data.response;
+    } else if (res.data.response) {
+      replies = [res.data.response];
+    } else if (res.data.message) {
+      replies = [res.data.message];
+    }
+
+    if (!replies.length) {
+      return api.sendMessage(
+        "Sorry, reply dite parchi na.",
+        event.threadID,
+        event.messageID
+      );
+    }
+
+    for (const rep of replies) {
+      if (!rep) continue;
+
+      await new Promise(resolve => {
+        api.sendMessage(
+          String(rep),
+          event.threadID,
+          () => resolve(),
+          event.messageID
+        );
+      });
+    }
+
+  } catch (error) {
+    console.error("BABY HANDLE REPLY ERROR:", error);
+
+    api.sendMessage(
+      "API te problem hocche. Pore abar try koro.",
+      event.threadID,
+      event.messageID
+    );
+  }
+};
