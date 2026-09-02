@@ -3,17 +3,21 @@ const axios = require("axios");
 const apiList =
   "https://gitlab.com/shahadat-sahu/sahu-api/-/raw/main/API.json";
 
-const getMainAPI = async () => {
+async function getMainAPI() {
   const res = await axios.get(apiList, {
     timeout: 15000
   });
 
+  if (!res.data || !res.data.simsimi) {
+    throw new Error("Simsimi API URL not found");
+  }
+
   return res.data.simsimi;
-};
+}
 
 module.exports.config = {
   name: "baby",
-  version: "2.0.2",
+  version: "3.0.0",
   hasPermssion: 0,
   credits: "ULLASH",
   description: "Smart AI Baby Chatbot",
@@ -43,30 +47,52 @@ const greetings = [
   "Bolo, kono problem hoyeche naki?",
   "Hmm, bolo. Dekhi tomake kivabe help korte pari.",
   "Are bolo na, ki hoyeche?",
-  "Ami to ekhanei achi, bolo.",
-  "Ki bolbe? Mon diye shunchi.",
-  "Hmm, interesting. Bolo!",
-  "Achha bolo, golpo kori.",
-  "Ki khobor? Sob thikthak to?",
-  "Bolo bondhu, ki cholche?",
-  "Hae, tomar message peyechi. Bolo.",
-  "Ki jante chao? Bolo dekhi!",
-  "Hmm bolo to, ki vabcho?",
-  "Achha bolo, ami shunchi.",
-  "Ki hoyeche? Sob thik ache to?",
-  "Bolo, ajke tomar mood kemon?",
-  "Hmm, ebar bolo ashol kotha ta ki?",
-  "Thik ache, bolo. Ami monojog diye shunchi.",
-  "Hae bolo, tomar sathe kotha bolte pari.",
-  "Bolo, ki niye help lagbe?",
-  "Hmm bolo, ami ready.",
-  "Achha, bolo ki scene?",
-  "Ki holo? Kichu bolba?",
-  "Bolo, ami shuntechi.",
-  "Hae, bolo. Ki obostha?"
+  "Ami to ekhanei achi, bolo."
 ];
 
-module.exports.run = async function ({ api, event, args, Users }) {
+function getReplies(data) {
+  if (!data) return [];
+
+  if (Array.isArray(data.response)) {
+    return data.response.filter(Boolean);
+  }
+
+  if (typeof data.response === "string" && data.response.trim()) {
+    return [data.response];
+  }
+
+  if (typeof data.message === "string" && data.message.trim()) {
+    return [data.message];
+  }
+
+  if (typeof data.reply === "string" && data.reply.trim()) {
+    return [data.reply];
+  }
+
+  return [];
+}
+
+async function sendReplies(api, event, replies) {
+  for (const reply of replies) {
+    if (!reply) continue;
+
+    await new Promise(resolve => {
+      api.sendMessage(
+        String(reply),
+        event.threadID,
+        () => resolve(),
+        event.messageID
+      );
+    });
+  }
+}
+
+module.exports.run = async function ({
+  api,
+  event,
+  args,
+  Users
+}) {
   try {
     const uid = event.senderID;
 
@@ -77,19 +103,8 @@ module.exports.run = async function ({ api, event, args, Users }) {
     } catch (e) {}
 
     const rawQuery = args.join(" ").trim();
-    const query = rawQuery.toLowerCase();
 
-    const simsim = await getMainAPI();
-
-    if (!simsim) {
-      return api.sendMessage(
-        "API পাওয়া যাচ্ছে না। পরে আবার চেষ্টা করো.",
-        event.threadID,
-        event.messageID
-      );
-    }
-
-    if (!query) {
+    if (!rawQuery) {
       const reply =
         greetings[Math.floor(Math.random() * greetings.length)];
 
@@ -101,25 +116,34 @@ module.exports.run = async function ({ api, event, args, Users }) {
     }
 
     const command = args[0].toLowerCase();
+    const simsim = await getMainAPI();
 
-    if (["remove", "rm"].includes(command)) {
-      const parts = rawQuery
-        .replace(/^(remove|rm)\s*/i, "")
-        .split(" - ");
+    if (command === "remove" || command === "rm") {
+      const text = rawQuery
+        .replace(/^(remove|rm)\s*/i, "");
+
+      const parts = text.split(" - ");
 
       if (parts.length < 2) {
         return api.sendMessage(
-          "Use: remove [Question] - [Reply]",
+          "Use: /baby remove [Question] - [Reply]",
           event.threadID,
           event.messageID
         );
       }
 
-      const [ask, ans] = parts.map(p => p.trim());
+      const ask = parts[0].trim();
+      const ans = parts.slice(1).join(" - ").trim();
 
       const res = await axios.get(
-        `${simsim}/delete?ask=${encodeURIComponent(ask)}&ans=${encodeURIComponent(ans)}`,
-        { timeout: 15000 }
+        `${simsim}/delete`,
+        {
+          params: {
+            ask,
+            ans
+          },
+          timeout: 15000
+        }
       );
 
       return api.sendMessage(
@@ -132,7 +156,9 @@ module.exports.run = async function ({ api, event, args, Users }) {
     if (command === "list") {
       const res = await axios.get(
         `${simsim}/list`,
-        { timeout: 15000 }
+        {
+          timeout: 15000
+        }
       );
 
       if (res.data.code === 200) {
@@ -146,31 +172,40 @@ module.exports.run = async function ({ api, event, args, Users }) {
       }
 
       return api.sendMessage(
-        `Error: ${res.data.message || "Unknown error"}`,
+        res.data.message || "Unknown error.",
         event.threadID,
         event.messageID
       );
     }
 
     if (command === "edit") {
-      const parts = rawQuery
-        .replace(/^edit\s*/i, "")
-        .split(" - ");
+      const text = rawQuery
+        .replace(/^edit\s*/i, "");
+
+      const parts = text.split(" - ");
 
       if (parts.length < 3) {
         return api.sendMessage(
-          "Use: edit [Question] - [Old Reply] - [New Reply]",
+          "Use: /baby edit [Question] - [Old Reply] - [New Reply]",
           event.threadID,
           event.messageID
         );
       }
 
-      const [ask, oldReply, newReply] =
-        parts.map(p => p.trim());
+      const ask = parts[0].trim();
+      const oldReply = parts[1].trim();
+      const newReply = parts.slice(2).join(" - ").trim();
 
       const res = await axios.get(
-        `${simsim}/edit?ask=${encodeURIComponent(ask)}&old=${encodeURIComponent(oldReply)}&new=${encodeURIComponent(newReply)}`,
-        { timeout: 15000 }
+        `${simsim}/edit`,
+        {
+          params: {
+            ask,
+            old: oldReply,
+            new: newReply
+          },
+          timeout: 15000
+        }
       );
 
       return api.sendMessage(
@@ -181,28 +216,28 @@ module.exports.run = async function ({ api, event, args, Users }) {
     }
 
     if (command === "teach") {
-      const parts = rawQuery
-        .replace(/^teach\s*/i, "")
-        .split(" - ");
+      const text = rawQuery
+        .replace(/^teach\s*/i, "");
+
+      const parts = text.split(" - ");
 
       if (parts.length < 2) {
         return api.sendMessage(
-          "Use: teach [Question] - [Reply]",
+          "Use: /baby teach [Question] - [Reply]",
           event.threadID,
           event.messageID
         );
       }
 
-      const [ask, ans] = parts.map(p => p.trim());
-
-      const groupID = event.threadID;
+      const ask = parts[0].trim();
+      const ans = parts.slice(1).join(" - ").trim();
 
       let groupName = event.threadName || "";
 
       try {
-        if (!groupName && groupID != uid) {
+        if (!groupName) {
           const threadInfo =
-            await api.getThreadInfo(groupID);
+            await api.getThreadInfo(event.threadID);
 
           if (threadInfo && threadInfo.threadName) {
             groupName = threadInfo.threadName;
@@ -210,22 +245,24 @@ module.exports.run = async function ({ api, event, args, Users }) {
         }
       } catch (e) {}
 
-      let teachUrl =
-        `${simsim}/teach?` +
-        `ask=${encodeURIComponent(ask)}` +
-        `&ans=${encodeURIComponent(ans)}` +
-        `&senderID=${encodeURIComponent(uid)}` +
-        `&senderName=${encodeURIComponent(senderName)}` +
-        `&groupID=${encodeURIComponent(groupID)}`;
+      const params = {
+        ask,
+        ans,
+        senderID: uid,
+        senderName,
+        groupID: event.threadID
+      };
 
       if (groupName) {
-        teachUrl +=
-          `&groupName=${encodeURIComponent(groupName)}`;
+        params.groupName = groupName;
       }
 
       const res = await axios.get(
-        teachUrl,
-        { timeout: 15000 }
+        `${simsim}/teach`,
+        {
+          params,
+          timeout: 15000
+        }
       );
 
       return api.sendMessage(
@@ -236,21 +273,24 @@ module.exports.run = async function ({ api, event, args, Users }) {
     }
 
     const res = await axios.get(
-      `${simsim}/simsimi?text=${encodeURIComponent(query)}&senderName=${encodeURIComponent(senderName)}`,
-      { timeout: 20000 }
+      `${simsim}/simsimi`,
+      {
+        params: {
+          text: rawQuery,
+          senderName
+        },
+        timeout: 20000
+      }
     );
 
-    let replies = [];
-
-    if (Array.isArray(res.data.response)) {
-      replies = res.data.response;
-    } else if (res.data.response) {
-      replies = [res.data.response];
-    } else if (res.data.message) {
-      replies = [res.data.message];
-    }
+    const replies = getReplies(res.data);
 
     if (!replies.length) {
+      console.log(
+        "BABY API RESPONSE:",
+        JSON.stringify(res.data)
+      );
+
       return api.sendMessage(
         "Sorry, ekhon reply dite parchi na.",
         event.threadID,
@@ -258,21 +298,13 @@ module.exports.run = async function ({ api, event, args, Users }) {
       );
     }
 
-    for (const rep of replies) {
-      if (!rep) continue;
-
-      await new Promise(resolve => {
-        api.sendMessage(
-          String(rep),
-          event.threadID,
-          () => resolve(),
-          event.messageID
-        );
-      });
-    }
+    await sendReplies(api, event, replies);
 
   } catch (error) {
-    console.error("BABY COMMAND ERROR:", error);
+    console.error(
+      "BABY COMMAND ERROR:",
+      error.response?.data || error.message
+    );
 
     return api.sendMessage(
       "Bot er API te problem hocche. Ektu pore abar try koro.",
@@ -282,76 +314,71 @@ module.exports.run = async function ({ api, event, args, Users }) {
   }
 };
 
-module.exports.handleReply = async function ({
+
+/*
+  Normal message auto reply
+  Note:
+  Eta kaj korar jonno tomar bot framework-e
+  handleEvent support thakte hobe.
+*/
+
+module.exports.handleEvent = async function ({
   api,
   event,
-  handleReply,
   Users
 }) {
   try {
-    if (event.senderID !== handleReply.author) {
+    const raw = event.body
+      ? event.body.trim()
+      : "";
+
+    if (!raw) return;
+
+    // Command hole auto reply korbe na
+    if (
+      raw.startsWith("/") ||
+      raw.startsWith("!") ||
+      raw.startsWith(".")
+    ) {
       return;
     }
-
-    const uid = event.senderID;
 
     let senderName = "User";
 
     try {
-      senderName = await Users.getNameUser(uid);
+      senderName =
+        await Users.getNameUser(event.senderID);
     } catch (e) {}
-
-    const query = event.body
-      ? event.body.trim().toLowerCase()
-      : "";
-
-    if (!query) return;
 
     const simsim = await getMainAPI();
 
     const res = await axios.get(
-      `${simsim}/simsimi?text=${encodeURIComponent(query)}&senderName=${encodeURIComponent(senderName)}`,
-      { timeout: 20000 }
+      `${simsim}/simsimi`,
+      {
+        params: {
+          text: raw,
+          senderName
+        },
+        timeout: 20000
+      }
     );
 
-    let replies = [];
-
-    if (Array.isArray(res.data.response)) {
-      replies = res.data.response;
-    } else if (res.data.response) {
-      replies = [res.data.response];
-    } else if (res.data.message) {
-      replies = [res.data.message];
-    }
+    const replies = getReplies(res.data);
 
     if (!replies.length) {
-      return api.sendMessage(
-        "Sorry, reply dite parchi na.",
-        event.threadID,
-        event.messageID
+      console.log(
+        "BABY EVENT API RESPONSE:",
+        JSON.stringify(res.data)
       );
+      return;
     }
 
-    for (const rep of replies) {
-      if (!rep) continue;
-
-      await new Promise(resolve => {
-        api.sendMessage(
-          String(rep),
-          event.threadID,
-          () => resolve(),
-          event.messageID
-        );
-      });
-    }
+    await sendReplies(api, event, replies);
 
   } catch (error) {
-    console.error("BABY HANDLE REPLY ERROR:", error);
-
-    api.sendMessage(
-      "API te problem hocche. Pore abar try koro.",
-      event.threadID,
-      event.messageID
+    console.error(
+      "BABY EVENT ERROR:",
+      error.response?.data || error.message
     );
   }
 };
